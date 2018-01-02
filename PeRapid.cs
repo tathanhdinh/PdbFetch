@@ -62,12 +62,12 @@ namespace PDBFetch
             public UInt16[] e_res2;      // Reserved words
             public UInt32 e_lfanew;      // File address of new exe header
 
-            private string _e_magic
-            {
-                get { return new string(e_magic.Select(b => (char)b).ToArray()); }
-            }
+            //private string _e_magic
+            //{
+            //    get { return new string(e_magic.Select(b => (char)b).ToArray()); }
+            //}
 
-            public bool IsValid => _e_magic == "MZ";
+            //public bool IsValid => _e_magic == "MZ";
         }
 
         // Credits: John Stewien
@@ -89,35 +89,24 @@ namespace PDBFetch
             public ushort e_lfarlc { get; }             // File address of relocation table
             public ushort e_ovno { get; }               // Overlay number
             public ushort[] e_res1 { get; }
-            //public ushort e_res_0 { get; }              // Reserved words
-            //public ushort e_res_1 { get; }              // Reserved words
-            //public ushort e_res_2 { get; }              // Reserved words
-            //public ushort e_res_3 { get; }              // Reserved words
             public ushort e_oemid { get; }              // OEM identifier (for e_oeminfo)
             public ushort e_oeminfo { get; }            // OEM information; e_oemid specific
             public ushort[] e_res2 { get; }
-            //public ushort e_res2_0 { get; }             // Reserved words
-            //public ushort e_res2_1 { get; }             // Reserved words
-            //public ushort e_res2_2 { get; }             // Reserved words
-            //public ushort e_res2_3 { get; }             // Reserved words
-            //public ushort e_res2_4 { get; }             // Reserved words
-            //public ushort e_res2_5 { get; }             // Reserved words
-            //public ushort e_res2_6 { get; }             // Reserved words
-            //public ushort e_res2_7 { get; }             // Reserved words
-            //public ushort e_res2_8 { get; }             // Reserved words
-            //public ushort e_res2_9 { get; }             // Reserved words
-            public uint e_lfanew { get; }             // File address of new exe header
+            public uint e_lfanew { get; }               // File address of new exe header
 
-            #region constructor
             public IMAGE_DOS_HEADER(BinaryReader reader)
             {
                 var nativeStruct = ExtractNativeStructure<NATIVE_IMAGE_DOS_HEADER>(reader);
-                if (!nativeStruct.IsValid)
+                //if (!nativeStruct.IsValid)
+                //{
+                //    throw new PeParsingException("bad MZ magic bytes");
+                //}
+
+                e_magic = BitConverter.ToUInt16(nativeStruct.e_magic, 0);
+                if (e_magic != 0x5a4d)
                 {
                     throw new PeParsingException("bad MZ magic bytes");
                 }
-
-                e_magic = BitConverter.ToUInt16(nativeStruct.e_magic, 0);
                 e_cblp = nativeStruct.e_cblp;
                 e_cp = nativeStruct.e_cp;
                 e_cparhdr = nativeStruct.e_cparhdr;
@@ -134,59 +123,71 @@ namespace PDBFetch
                 e_oemid = nativeStruct.e_oemid;
                 e_res2 = nativeStruct.e_res2;
                 e_lfanew = nativeStruct.e_lfanew;
-                //e_magic = reader.ReadUInt16();
-                //if (0x5a4d != e_magic)
-                //{
-                //    throw new PeParsingException("bad MZ magic bytes");
-                //}
-
-                //e_cblp = reader.ReadUInt16();
-                //e_cp = reader.ReadUInt16();
-                //e_crlc = reader.ReadUInt16();
-                //e_cparhdr = reader.ReadUInt16();
-                //e_minalloc = reader.ReadUInt16();
-                //e_maxalloc = reader.ReadUInt16();
-                //e_ss = reader.ReadUInt16(); ;
-                //e_sp = reader.ReadUInt16();
-                //e_csum = reader.ReadUInt16();
-                //e_ip = reader.ReadUInt16();
-                //e_cs = reader.ReadUInt16();
-                //e_lfarlc = reader.ReadUInt16();
-                //e_ovno = reader.ReadUInt16();
-                //e_res_0 = reader.ReadUInt16();
-                //e_res_1 = reader.ReadUInt16();
-                //e_res_2 = reader.ReadUInt16();
-                //e_res_3 = reader.ReadUInt16();
-                //e_oemid = reader.ReadUInt16();
-                //e_res2_0 = reader.ReadUInt16();
-                //e_res2_1 = reader.ReadUInt16();
-                //e_res2_2 = reader.ReadUInt16();
-                //e_res2_3 = reader.ReadUInt16();
-                //e_res2_4 = reader.ReadUInt16();
-                //e_res2_5 = reader.ReadUInt16();
-                //e_res2_6 = reader.ReadUInt16();
-                //e_res2_7 = reader.ReadUInt16();
-                //e_res2_8 = reader.ReadUInt16();
-                //e_res2_9 = reader.ReadUInt16();
-                //e_lfanew = reader.ReadUInt16();
             }
-            #endregion constructor
         }
         IMAGE_DOS_HEADER ImageDosHeader { get; }
 
+        // from PInvoke.net
+        [StructLayout(LayoutKind.Sequential)]
+        private struct NATIVE_IMAGE_FILE_HEADER
+        {
+            public UInt16 Machine;
+            public UInt16 NumberOfSections;
+            public UInt32 TimeDateStamp;
+            public UInt32 PointerToSymbolTable;
+            public UInt32 NumberOfSymbols;
+            public UInt16 SizeOfOptionalHeader;
+            public UInt16 Characteristics;
+        }
+
+        public enum ImageFileMachine : ushort
+        {
+            IMAGE_FILE_MACHINE_I386 = 0x14c,
+            IMAGE_FILE_MACHINE_IA64 = 0x200,
+            IMAGE_FILE_MACHINE_AMD64 = 0x8664
+        }
+
+        [Flags]
+        public enum ImageFileCharacteristics : ushort
+        {
+            IMAGE_FILE_RELOCS_STRIPPED = 0x1,
+            IMAGE_FILE_EXECUTABLE_IMAGE = 0x2,
+            IMAGE_FILE_LINE_NUMS_STRIPPED = 0x4,
+            IMAGE_FILE_LOCAL_SYMS_STRIPPED = 0x8,
+            IMAGE_FILE_AGGRESIVE_WS_TRIM = 0x10,
+            IMAGE_FILE_LARGE_ADDRESS_AWARE = 0x20,
+            IMAGE_FILE_BYTES_REVERSED_LO = 0x80,
+            IMAGE_FILE_32BIT_MACHINE = 0x100,
+            IMAGE_FILE_DEBUG_STRIPPED = 0x200,
+            IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP = 0x400,
+            IMAGE_FILE_NET_RUN_FROM_SWAP = 0x800,
+            IMAGE_FILE_SYSTEM = 0x1000,
+            IMAGE_FILE_DLL = 0x2000,
+            IMAGE_FILE_UP_SYSTEM_ONLY = 0x4000,
+            IMAGE_FILE_BYTES_REVERSED_HI = 0x8000
+        }
+
         public class IMAGE_FILE_HEADER
         {
-            public UInt16 Machine { get; }
-            public UInt16 NumberOfSections { get; }
-            public UInt32 TimeDateStamp { get; }
-            public UInt32 PointerToSymbolTable { get; }
-            public UInt32 NumberOfSymbols { get; }
-            public UInt16 SizeOfOptionalHeader { get; }
-            public UInt16 Characteristics { get; }
+            public ImageFileMachine Machine { get; }
+            public ushort NumberOfSections { get; }
+            public uint TimeDateStamp { get; }
+            public uint PointerToSymbolTable { get; }
+            public uint NumberOfSymbols { get; }
+            public ushort SizeOfOptionalHeader { get; }
+            public ImageFileCharacteristics Characteristics { get; }
 
             public IMAGE_FILE_HEADER(BinaryReader reader)
             {
-                Machine = reader.ReadUInt16();
+                var nativeStruct = ExtractNativeStructure<NATIVE_IMAGE_FILE_HEADER>(reader);
+
+                Machine = (ImageFileMachine)nativeStruct.Machine;
+                NumberOfSections = nativeStruct.NumberOfSections;
+                TimeDateStamp = nativeStruct.TimeDateStamp;
+                PointerToSymbolTable = nativeStruct.PointerToSymbolTable;
+                NumberOfSymbols = nativeStruct.NumberOfSymbols;
+                SizeOfOptionalHeader = nativeStruct.SizeOfOptionalHeader;
+                Characteristics = (ImageFileCharacteristics)nativeStruct.Characteristics;
             }
         }
 
@@ -301,9 +302,7 @@ namespace PDBFetch
         {
             public uint Signature { get; }
             public IMAGE_FILE_HEADER FileHeader { get; }
-            /// <summary>
-            /// either IMAGE_OPTIONAL_HEADER32 or IMAGE_OPTIONAL_HEADER64
-            /// </summary>
+            // either IMAGE_OPTIONAL_HEADER32 or IMAGE_OPTIONAL_HEADER64
             public dynamic OptionalHeader { get; }
 
             public IMAGE_NT_HEADERS(BinaryReader reader)
@@ -347,10 +346,10 @@ namespace PDBFetch
             }
             catch(PeParsingException)
             {
-                //throw new PeParsingException("bad dos header");
+                // re throw
                 throw;
             }
-            catch
+            catch // other exceptions
             {
                 throw new PeParsingException("bad dos header");
             }
