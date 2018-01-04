@@ -191,45 +191,156 @@ namespace PDBFetch
             }
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        private struct NATIVE_IMAGE_DATA_DIRECTORY
+        {
+            public UInt32 VirtualAddress;
+            public UInt32 Size;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        private struct NATIVE_IMAGE_OPTIONAL_HEADER32
+        {
+            public UInt16 Magic;
+            public Byte MajorLinkerVersion;
+            public Byte MinorLinkerVersion;
+            public UInt32 SizeOfCode;
+            public UInt32 SizeOfInitializedData;
+            public UInt32 SizeOfUninitializedData;
+            public UInt32 AddressOfEntryPoint;
+            public UInt32 BaseOfCode;
+            public UInt32 BaseOfData;
+            public UInt32 ImageBase;
+            public UInt32 SectionAlignment;
+            public UInt32 FileAlignment;
+            public UInt16 MajorOperatingSystemVersion;
+            public UInt16 MinorOperatingSystemVersion;
+            public UInt16 MajorImageVersion;
+            public UInt16 MinorImageVersion;
+            public UInt16 MajorSubsystemVersion;
+            public UInt16 MinorSubsystemVersion;
+            public UInt32 Win32VersionValue;
+            public UInt32 SizeOfImage;
+            public UInt32 SizeOfHeaders;
+            public UInt32 CheckSum;
+            public UInt16 Subsystem;
+            public UInt16 DllCharacteristics;
+            public UInt32 SizeOfStackReserve;
+            public UInt32 SizeOfStackCommit;
+            public UInt32 SizeOfHeapReserve;
+            public UInt32 SizeOfHeapCommit;
+            public UInt32 LoaderFlags;
+            public UInt32 NumberOfRvaAndSizes;
+
+            public NATIVE_IMAGE_DATA_DIRECTORY ExportTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY ImportTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY ResourceTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY ExceptionTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY CertificateTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY BaseRelocationTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY Debug;
+            public NATIVE_IMAGE_DATA_DIRECTORY Architecture;
+            public NATIVE_IMAGE_DATA_DIRECTORY GlobalPtr;
+            public NATIVE_IMAGE_DATA_DIRECTORY TLSTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY LoadConfigTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY BoundImport;
+            public NATIVE_IMAGE_DATA_DIRECTORY IAT;
+            public NATIVE_IMAGE_DATA_DIRECTORY DelayImportDescriptor;
+            public NATIVE_IMAGE_DATA_DIRECTORY CLRRuntimeHeader;
+            public NATIVE_IMAGE_DATA_DIRECTORY Reserved;
+        }
+
         public class IMAGE_DATA_DIRECTORY
         {
-            public UInt32 VirtualAddress { get; }
-            public UInt32 Size { get; }
+            public uint VirtualAddress { get; }
+            public uint Size { get; }
+
+            public IMAGE_DATA_DIRECTORY(uint virtualAddress, uint size)
+            {
+                VirtualAddress = virtualAddress;
+                Size = size;
+            }
         }
+
+        public enum ImageOptionalMagic : ushort
+        {
+            IMAGE_NT_OPTIONAL_HDR32_MAGIC = 0x10b,
+            MAGE_NT_OPTIONAL_HDR64_MAGIC = 0x20b,
+            IMAGE_ROM_OPTIONAL_HDR_MAGIC = 0x107
+        }
+
+        public enum ImageOptionalSubsytem : ushort
+        {
+            IMAGE_SUBSYSTEM_UNKNOWN = 0,
+            IMAGE_SUBSYSTEM_NATIVE = 1,
+            IMAGE_SUBSYSTEM_WINDOWS_GUI = 2,
+            IMAGE_SUBSYSTEM_WINDOWS_CUI = 3,
+            IMAGE_SUBSYSTEM_OS2_CUI = 5,
+            IMAGE_SUBSYSTEM_POSIX_CUI = 7,
+            IMAGE_SUBSYSTEM_WINDOWS_CE_GUI = 9,
+            IMAGE_SUBSYSTEM_EFI_APPLICATION = 10,
+            IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER = 11,
+            IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER = 12,
+            IMAGE_SUBSYSTEM_EFI_ROM = 13,
+            IMAGE_SUBSYSTEM_XBOX = 14,
+            IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION = 16
+        }
+
+        [Flags]
+        public enum ImageOptionalDllCharacteristics : ushort
+        {
+            Reserved0 = 0x1,
+            Reserved1 = 0x2,
+            Reserved2 = 0x4,
+            Reserved3 = 0x8,
+            IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE = 0x40,
+            IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY = 0x80,
+            IMAGE_DLLCHARACTERISTICS_NX_COMPAT = 0x100,
+            IMAGE_DLLCHARACTERISTICS_NO_ISOLATION = 0x200,
+            IMAGE_DLLCHARACTERISTICS_NO_SEH = 0x400,
+            IMAGE_DLLCHARACTERISTICS_NO_BIND = 0x800,
+            IMAGE_DLLCHARACTERISTICS_WDM_DRIVER = 0x2000,
+            Reserved4 = 0x4000,
+            IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE = 0x8000
+        }
+
 
         public class IMAGE_OPTIONAL_HEADER32
         {
-            public UInt16 Magic { get; }
-            public Byte MajorLinkerVersion { get; }
-            public Byte MinorLinkerVersion { get; }
-            public UInt32 SizeOfCode { get; }
-            public UInt32 SizeOfInitializedData { get; }
-            public UInt32 SizeOfUninitializedData { get; }
-            public UInt32 AddressOfEntryPoint { get; }
-            public UInt32 BaseOfCode { get; }
-            public UInt32 BaseOfData { get; }
-            public UInt32 ImageBase { get; }
-            public UInt32 SectionAlignment { get; }
-            public UInt32 FileAlignment { get; }
-            public UInt16 MajorOperatingSystemVersion { get; }
-            public UInt16 MinorOperatingSystemVersion { get; }
-            public UInt16 MajorImageVersion { get; }
-            public UInt16 MinorImageVersion { get; }
-            public UInt16 MajorSubsystemVersion { get; }
-            public UInt16 MinorSubsystemVersion { get; }
-            public UInt32 Win32VersionValue { get; }
-            public UInt32 SizeOfImage { get; }
-            public UInt32 SizeOfHeaders { get; }
-            public UInt32 CheckSum { get; }
-            public UInt16 Subsystem { get; }
-            public UInt16 DllCharacteristics { get; }
-            public UInt32 SizeOfStackReserve { get; }
-            public UInt32 SizeOfStackCommit { get; }
-            public UInt32 SizeOfHeapReserve { get; }
-            public UInt32 SizeOfHeapCommit { get; }
-            public UInt32 LoaderFlags { get; }
-            public UInt32 NumberOfRvaAndSizes { get; }
+            #region Separated properties
+            public ImageOptionalMagic Magic { get; }
+            public byte MajorLinkerVersion { get; }
+            public byte MinorLinkerVersion { get; }
+            public uint SizeOfCode { get; }
+            public uint SizeOfInitializedData { get; }
+            public uint SizeOfUninitializedData { get; }
+            public uint AddressOfEntryPoint { get; }
+            public uint BaseOfCode { get; }
+            public uint BaseOfData { get; }
+            public uint ImageBase { get; }
+            public uint SectionAlignment { get; }
+            public uint FileAlignment { get; }
+            public ushort MajorOperatingSystemVersion { get; }
+            public ushort MinorOperatingSystemVersion { get; }
+            public ushort MajorImageVersion { get; }
+            public ushort MinorImageVersion { get; }
+            public ushort MajorSubsystemVersion { get; }
+            public ushort MinorSubsystemVersion { get; }
+            public uint Win32VersionValue { get; }
+            public uint SizeOfImage { get; }
+            public uint SizeOfHeaders { get; }
+            public uint CheckSum { get; }
+            public ImageOptionalSubsytem Subsystem { get; }
+            public ImageOptionalDllCharacteristics DllCharacteristics { get; }
+            public uint SizeOfStackReserve { get; }
+            public uint SizeOfStackCommit { get; }
+            public uint SizeOfHeapReserve { get; }
+            public uint SizeOfHeapCommit { get; }
+            public uint LoaderFlags { get; }
+            public uint NumberOfRvaAndSizes { get; }
+            #endregion
 
+            #region Image data directories
             public IMAGE_DATA_DIRECTORY ExportTable { get; }
             public IMAGE_DATA_DIRECTORY ImportTable { get; }
             public IMAGE_DATA_DIRECTORY ResourceTable { get; }
@@ -246,11 +357,118 @@ namespace PDBFetch
             public IMAGE_DATA_DIRECTORY DelayImportDescriptor { get; }
             public IMAGE_DATA_DIRECTORY CLRRuntimeHeader { get; }
             public IMAGE_DATA_DIRECTORY Reserved { get; }
+            #endregion
+
+            public IMAGE_OPTIONAL_HEADER32(BinaryReader reader)
+            {
+                var nativeStructure = ExtractNativeStructure<NATIVE_IMAGE_OPTIONAL_HEADER32>(reader);
+
+                #region Assign separated properties
+                Magic = (ImageOptionalMagic)nativeStructure.Magic;
+                MajorLinkerVersion = nativeStructure.MajorLinkerVersion;
+                MinorLinkerVersion = nativeStructure.MinorLinkerVersion;
+                SizeOfCode = nativeStructure.SizeOfCode;
+                SizeOfInitializedData = nativeStructure.SizeOfInitializedData;
+                SizeOfUninitializedData = nativeStructure.SizeOfUninitializedData;
+                AddressOfEntryPoint = nativeStructure.AddressOfEntryPoint;
+                BaseOfCode = nativeStructure.BaseOfCode;
+                BaseOfData = nativeStructure.BaseOfData;
+                ImageBase = nativeStructure.ImageBase;
+                SectionAlignment = nativeStructure.SectionAlignment;
+                FileAlignment = nativeStructure.FileAlignment;
+                MajorOperatingSystemVersion = nativeStructure.MajorOperatingSystemVersion;
+                MinorOperatingSystemVersion = nativeStructure.MinorOperatingSystemVersion;
+                MajorSubsystemVersion = nativeStructure.MajorSubsystemVersion;
+                MinorSubsystemVersion = nativeStructure.MinorSubsystemVersion;
+                Win32VersionValue = nativeStructure.Win32VersionValue;
+                SizeOfImage = nativeStructure.SizeOfImage;
+                SizeOfHeaders = nativeStructure.SizeOfHeaders;
+                CheckSum = nativeStructure.CheckSum;
+                Subsystem = (ImageOptionalSubsytem)nativeStructure.Subsystem;
+                DllCharacteristics = (ImageOptionalDllCharacteristics)nativeStructure.DllCharacteristics;
+                SizeOfStackReserve = nativeStructure.SizeOfStackReserve;
+                SizeOfStackCommit = nativeStructure.SizeOfStackCommit;
+                SizeOfHeapReserve = nativeStructure.SizeOfHeapReserve;
+                SizeOfHeapCommit = nativeStructure.SizeOfHeapCommit;
+                LoaderFlags = nativeStructure.LoaderFlags;
+                NumberOfRvaAndSizes = nativeStructure.NumberOfRvaAndSizes;
+                #endregion
+
+                #region Assign export tables
+                ExportTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ExportTable.VirtualAddress, nativeStructure.ExportTable.Size);
+                ImportTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ImportTable.VirtualAddress, nativeStructure.ImportTable.Size);
+                ResourceTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ResourceTable.VirtualAddress, nativeStructure.ResourceTable.Size);
+                ExceptionTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ExceptionTable.VirtualAddress, nativeStructure.ResourceTable.Size);
+                CertificateTable = new IMAGE_DATA_DIRECTORY(nativeStructure.CertificateTable.VirtualAddress, nativeStructure.CertificateTable.Size);
+                BaseRelocationTable = new IMAGE_DATA_DIRECTORY(nativeStructure.BaseRelocationTable.VirtualAddress, nativeStructure.BaseRelocationTable.Size);
+                Debug = new IMAGE_DATA_DIRECTORY(nativeStructure.Debug.VirtualAddress, nativeStructure.Debug.Size);
+                Architecture = new IMAGE_DATA_DIRECTORY(nativeStructure.Architecture.VirtualAddress, nativeStructure.Architecture.Size);
+                GlobalPtr = new IMAGE_DATA_DIRECTORY(nativeStructure.GlobalPtr.VirtualAddress, nativeStructure.GlobalPtr.Size);
+                TLSTable = new IMAGE_DATA_DIRECTORY(nativeStructure.TLSTable.VirtualAddress, nativeStructure.TLSTable.Size);
+                LoadConfigTable = new IMAGE_DATA_DIRECTORY(nativeStructure.LoadConfigTable.VirtualAddress, nativeStructure.LoadConfigTable.Size);
+                BoundImport = new IMAGE_DATA_DIRECTORY(nativeStructure.BoundImport.VirtualAddress, nativeStructure.BoundImport.Size);
+                IAT = new IMAGE_DATA_DIRECTORY(nativeStructure.IAT.VirtualAddress, nativeStructure.IAT.Size);
+                DelayImportDescriptor = new IMAGE_DATA_DIRECTORY(nativeStructure.DelayImportDescriptor.VirtualAddress, nativeStructure.DelayImportDescriptor.Size);
+                CLRRuntimeHeader = new IMAGE_DATA_DIRECTORY(nativeStructure.CLRRuntimeHeader.VirtualAddress, nativeStructure.CLRRuntimeHeader.Size);
+                Reserved = new IMAGE_DATA_DIRECTORY(nativeStructure.Reserved.VirtualAddress, nativeStructure.Reserved.Size);
+                #endregion
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct NATIVE_IMAGE_OPTIONAL_HEADER64
+        {
+            public UInt16 Magic;
+            public Byte MajorLinkerVersion;
+            public Byte MinorLinkerVersion;
+            public UInt32 SizeOfCode;
+            public UInt32 SizeOfInitializedData;
+            public UInt32 SizeOfUninitializedData;
+            public UInt32 AddressOfEntryPoint;
+            public UInt32 BaseOfCode;
+            public UInt64 ImageBase;
+            public UInt32 SectionAlignment;
+            public UInt32 FileAlignment;
+            public UInt16 MajorOperatingSystemVersion;
+            public UInt16 MinorOperatingSystemVersion;
+            public UInt16 MajorImageVersion;
+            public UInt16 MinorImageVersion;
+            public UInt16 MajorSubsystemVersion;
+            public UInt16 MinorSubsystemVersion;
+            public UInt32 Win32VersionValue;
+            public UInt32 SizeOfImage;
+            public UInt32 SizeOfHeaders;
+            public UInt32 CheckSum;
+            public UInt16 Subsystem;
+            public UInt16 DllCharacteristics;
+            public UInt64 SizeOfStackReserve;
+            public UInt64 SizeOfStackCommit;
+            public UInt64 SizeOfHeapReserve;
+            public UInt64 SizeOfHeapCommit;
+            public UInt32 LoaderFlags;
+            public UInt32 NumberOfRvaAndSizes;
+
+            public IMAGE_DATA_DIRECTORY ExportTable;
+            public IMAGE_DATA_DIRECTORY ImportTable;
+            public IMAGE_DATA_DIRECTORY ResourceTable;
+            public IMAGE_DATA_DIRECTORY ExceptionTable;
+            public IMAGE_DATA_DIRECTORY CertificateTable;
+            public IMAGE_DATA_DIRECTORY BaseRelocationTable;
+            public IMAGE_DATA_DIRECTORY Debug;
+            public IMAGE_DATA_DIRECTORY Architecture;
+            public IMAGE_DATA_DIRECTORY GlobalPtr;
+            public IMAGE_DATA_DIRECTORY TLSTable;
+            public IMAGE_DATA_DIRECTORY LoadConfigTable;
+            public IMAGE_DATA_DIRECTORY BoundImport;
+            public IMAGE_DATA_DIRECTORY IAT;
+            public IMAGE_DATA_DIRECTORY DelayImportDescriptor;
+            public IMAGE_DATA_DIRECTORY CLRRuntimeHeader;
+            public IMAGE_DATA_DIRECTORY Reserved;
         }
 
         public class IMAGE_OPTIONAL_HEADER64
         {
-            public UInt16 Magic { get; }
+            public ImageOptionalMagic Magic { get; }
             public Byte MajorLinkerVersion { get; }
             public Byte MinorLinkerVersion { get; }
             public UInt32 SizeOfCode { get; }
