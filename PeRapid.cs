@@ -192,7 +192,7 @@ namespace PDBFetch
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct NATIVE_IMAGE_DATA_DIRECTORY
+        internal struct NATIVE_IMAGE_DATA_DIRECTORY
         {
             public UInt32 VirtualAddress;
             public UInt32 Size;
@@ -255,10 +255,13 @@ namespace PDBFetch
             public uint VirtualAddress { get; }
             public uint Size { get; }
 
-            public IMAGE_DATA_DIRECTORY(uint virtualAddress, uint size)
+            //public IMAGE_DATA_DIRECTORY(uint virtualAddress, uint size)
+            internal IMAGE_DATA_DIRECTORY(NATIVE_IMAGE_DATA_DIRECTORY nativeDir)
             {
-                VirtualAddress = virtualAddress;
-                Size = size;
+                //VirtualAddress = virtualAddress;
+                //Size = size;
+                VirtualAddress = nativeDir.VirtualAddress;
+                Size = nativeDir.Size;
             }
         }
 
@@ -394,30 +397,47 @@ namespace PDBFetch
                 NumberOfRvaAndSizes = nativeStructure.NumberOfRvaAndSizes;
                 #endregion
 
-                #region Assign export tables
-                ExportTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ExportTable.VirtualAddress, nativeStructure.ExportTable.Size);
-                ImportTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ImportTable.VirtualAddress, nativeStructure.ImportTable.Size);
-                ResourceTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ResourceTable.VirtualAddress, nativeStructure.ResourceTable.Size);
-                ExceptionTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ExceptionTable.VirtualAddress, nativeStructure.ResourceTable.Size);
-                CertificateTable = new IMAGE_DATA_DIRECTORY(nativeStructure.CertificateTable.VirtualAddress, nativeStructure.CertificateTable.Size);
-                BaseRelocationTable = new IMAGE_DATA_DIRECTORY(nativeStructure.BaseRelocationTable.VirtualAddress, nativeStructure.BaseRelocationTable.Size);
-                Debug = new IMAGE_DATA_DIRECTORY(nativeStructure.Debug.VirtualAddress, nativeStructure.Debug.Size);
-                Architecture = new IMAGE_DATA_DIRECTORY(nativeStructure.Architecture.VirtualAddress, nativeStructure.Architecture.Size);
-                GlobalPtr = new IMAGE_DATA_DIRECTORY(nativeStructure.GlobalPtr.VirtualAddress, nativeStructure.GlobalPtr.Size);
-                TLSTable = new IMAGE_DATA_DIRECTORY(nativeStructure.TLSTable.VirtualAddress, nativeStructure.TLSTable.Size);
-                LoadConfigTable = new IMAGE_DATA_DIRECTORY(nativeStructure.LoadConfigTable.VirtualAddress, nativeStructure.LoadConfigTable.Size);
-                BoundImport = new IMAGE_DATA_DIRECTORY(nativeStructure.BoundImport.VirtualAddress, nativeStructure.BoundImport.Size);
-                IAT = new IMAGE_DATA_DIRECTORY(nativeStructure.IAT.VirtualAddress, nativeStructure.IAT.Size);
-                DelayImportDescriptor = new IMAGE_DATA_DIRECTORY(nativeStructure.DelayImportDescriptor.VirtualAddress, nativeStructure.DelayImportDescriptor.Size);
-                CLRRuntimeHeader = new IMAGE_DATA_DIRECTORY(nativeStructure.CLRRuntimeHeader.VirtualAddress, nativeStructure.CLRRuntimeHeader.Size);
-                Reserved = new IMAGE_DATA_DIRECTORY(nativeStructure.Reserved.VirtualAddress, nativeStructure.Reserved.Size);
+                #region Assign data directories
+                ExportTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ExportTable);
+                ImportTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ImportTable);
+                ResourceTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ResourceTable);
+                ExceptionTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ExceptionTable);
+                CertificateTable = new IMAGE_DATA_DIRECTORY(nativeStructure.CertificateTable);
+                BaseRelocationTable = new IMAGE_DATA_DIRECTORY(nativeStructure.BaseRelocationTable);
+                Debug = new IMAGE_DATA_DIRECTORY(nativeStructure.Debug);
+                Architecture = new IMAGE_DATA_DIRECTORY(nativeStructure.Architecture);
+                GlobalPtr = new IMAGE_DATA_DIRECTORY(nativeStructure.GlobalPtr);
+                TLSTable = new IMAGE_DATA_DIRECTORY(nativeStructure.TLSTable);
+                LoadConfigTable = new IMAGE_DATA_DIRECTORY(nativeStructure.LoadConfigTable);
+                BoundImport = new IMAGE_DATA_DIRECTORY(nativeStructure.BoundImport);
+                IAT = new IMAGE_DATA_DIRECTORY(nativeStructure.IAT);
+                DelayImportDescriptor = new IMAGE_DATA_DIRECTORY(nativeStructure.DelayImportDescriptor);
+                CLRRuntimeHeader = new IMAGE_DATA_DIRECTORY(nativeStructure.CLRRuntimeHeader);
+                Reserved = new IMAGE_DATA_DIRECTORY(nativeStructure.Reserved);
+                //ExportTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ExportTable.VirtualAddress, nativeStructure.ExportTable.Size);
+                //ImportTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ImportTable.VirtualAddress, nativeStructure.ImportTable.Size);
+                //ResourceTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ResourceTable.VirtualAddress, nativeStructure.ResourceTable.Size);
+                //ExceptionTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ExceptionTable.VirtualAddress, nativeStructure.ResourceTable.Size);
+                //CertificateTable = new IMAGE_DATA_DIRECTORY(nativeStructure.CertificateTable.VirtualAddress, nativeStructure.CertificateTable.Size);
+                //BaseRelocationTable = new IMAGE_DATA_DIRECTORY(nativeStructure.BaseRelocationTable.VirtualAddress, nativeStructure.BaseRelocationTable.Size);
+                //Debug = new IMAGE_DATA_DIRECTORY(nativeStructure.Debug.VirtualAddress, nativeStructure.Debug.Size);
+                //Architecture = new IMAGE_DATA_DIRECTORY(nativeStructure.Architecture.VirtualAddress, nativeStructure.Architecture.Size);
+                //GlobalPtr = new IMAGE_DATA_DIRECTORY(nativeStructure.GlobalPtr.VirtualAddress, nativeStructure.GlobalPtr.Size);
+                //TLSTable = new IMAGE_DATA_DIRECTORY(nativeStructure.TLSTable.VirtualAddress, nativeStructure.TLSTable.Size);
+                //LoadConfigTable = new IMAGE_DATA_DIRECTORY(nativeStructure.LoadConfigTable.VirtualAddress, nativeStructure.LoadConfigTable.Size);
+                //BoundImport = new IMAGE_DATA_DIRECTORY(nativeStructure.BoundImport.VirtualAddress, nativeStructure.BoundImport.Size);
+                //IAT = new IMAGE_DATA_DIRECTORY(nativeStructure.IAT.VirtualAddress, nativeStructure.IAT.Size);
+                //DelayImportDescriptor = new IMAGE_DATA_DIRECTORY(nativeStructure.DelayImportDescriptor.VirtualAddress, nativeStructure.DelayImportDescriptor.Size);
+                //CLRRuntimeHeader = new IMAGE_DATA_DIRECTORY(nativeStructure.CLRRuntimeHeader.VirtualAddress, nativeStructure.CLRRuntimeHeader.Size);
+                //Reserved = new IMAGE_DATA_DIRECTORY(nativeStructure.Reserved.VirtualAddress, nativeStructure.Reserved.Size);
                 #endregion
             }
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct NATIVE_IMAGE_OPTIONAL_HEADER64
+        internal struct NATIVE_IMAGE_OPTIONAL_HEADER64
         {
+            #region Separated properties
             public UInt16 Magic;
             public Byte MajorLinkerVersion;
             public Byte MinorLinkerVersion;
@@ -447,7 +467,9 @@ namespace PDBFetch
             public UInt64 SizeOfHeapCommit;
             public UInt32 LoaderFlags;
             public UInt32 NumberOfRvaAndSizes;
+            #endregion
 
+            #region Image data directories
             public IMAGE_DATA_DIRECTORY ExportTable;
             public IMAGE_DATA_DIRECTORY ImportTable;
             public IMAGE_DATA_DIRECTORY ResourceTable;
@@ -464,40 +486,44 @@ namespace PDBFetch
             public IMAGE_DATA_DIRECTORY DelayImportDescriptor;
             public IMAGE_DATA_DIRECTORY CLRRuntimeHeader;
             public IMAGE_DATA_DIRECTORY Reserved;
+            #endregion
         }
 
         public class IMAGE_OPTIONAL_HEADER64
         {
+            #region Separated properties
             public ImageOptionalMagic Magic { get; }
-            public Byte MajorLinkerVersion { get; }
-            public Byte MinorLinkerVersion { get; }
-            public UInt32 SizeOfCode { get; }
-            public UInt32 SizeOfInitializedData { get; }
-            public UInt32 SizeOfUninitializedData { get; }
-            public UInt32 AddressOfEntryPoint { get; }
-            public UInt32 BaseOfCode { get; }
-            public UInt64 ImageBase { get; }
-            public UInt32 SectionAlignment { get; }
-            public UInt32 FileAlignment { get; }
-            public UInt16 MajorOperatingSystemVersion { get; }
-            public UInt16 MinorOperatingSystemVersion { get; }
-            public UInt16 MajorImageVersion { get; }
-            public UInt16 MinorImageVersion { get; }
-            public UInt16 MajorSubsystemVersion { get; }
-            public UInt16 MinorSubsystemVersion { get; }
-            public UInt32 Win32VersionValue { get; }
-            public UInt32 SizeOfImage { get; }
-            public UInt32 SizeOfHeaders { get; }
-            public UInt32 CheckSum { get; }
-            public UInt16 Subsystem { get; }
-            public UInt16 DllCharacteristics { get; }
-            public UInt64 SizeOfStackReserve { get; }
-            public UInt64 SizeOfStackCommit { get; }
-            public UInt64 SizeOfHeapReserve { get; }
-            public UInt64 SizeOfHeapCommit { get; }
-            public UInt32 LoaderFlags { get; }
-            public UInt32 NumberOfRvaAndSizes { get; }
+            public byte MajorLinkerVersion { get; }
+            public byte MinorLinkerVersion { get; }
+            public uint SizeOfCode { get; }
+            public uint SizeOfInitializedData { get; }
+            public uint SizeOfUninitializedData { get; }
+            public uint AddressOfEntryPoint { get; }
+            public uint BaseOfCode { get; }
+            public ulong ImageBase { get; }
+            public uint SectionAlignment { get; }
+            public uint FileAlignment { get; }
+            public ushort MajorOperatingSystemVersion { get; }
+            public ushort MinorOperatingSystemVersion { get; }
+            public ushort MajorImageVersion { get; }
+            public ushort MinorImageVersion { get; }
+            public ushort MajorSubsystemVersion { get; }
+            public ushort MinorSubsystemVersion { get; }
+            public uint Win32VersionValue { get; }
+            public uint SizeOfImage { get; }
+            public uint SizeOfHeaders { get; }
+            public uint CheckSum { get; }
+            public ImageOptionalSubsytem Subsystem { get; }
+            public ImageOptionalDllCharacteristics DllCharacteristics { get; }
+            public ulong SizeOfStackReserve { get; }
+            public ulong SizeOfStackCommit { get; }
+            public ulong SizeOfHeapReserve { get; }
+            public ulong SizeOfHeapCommit { get; }
+            public uint LoaderFlags { get; }
+            public uint NumberOfRvaAndSizes { get; }
+            #endregion
 
+            #region Data directories
             public IMAGE_DATA_DIRECTORY ExportTable { get; }
             public IMAGE_DATA_DIRECTORY ImportTable { get; }
             public IMAGE_DATA_DIRECTORY ResourceTable { get; }
@@ -514,6 +540,63 @@ namespace PDBFetch
             public IMAGE_DATA_DIRECTORY DelayImportDescriptor { get; }
             public IMAGE_DATA_DIRECTORY CLRRuntimeHeader { get; }
             public IMAGE_DATA_DIRECTORY Reserved { get; }
+            #endregion
+
+            public IMAGE_OPTIONAL_HEADER64(BinaryReader reader)
+            {
+                var nativeStructure = ExtractNativeStructure<NATIVE_IMAGE_OPTIONAL_HEADER32>(reader);
+
+                #region Assign separated properties
+                Magic = (ImageOptionalMagic)nativeStructure.Magic;
+                MajorLinkerVersion = nativeStructure.MajorLinkerVersion;
+                MinorLinkerVersion = nativeStructure.MinorLinkerVersion;
+                SizeOfCode = nativeStructure.SizeOfCode;
+                SizeOfInitializedData = nativeStructure.SizeOfInitializedData;
+                SizeOfUninitializedData = nativeStructure.SizeOfUninitializedData;
+                AddressOfEntryPoint = nativeStructure.AddressOfEntryPoint;
+                BaseOfCode = nativeStructure.BaseOfCode;
+                ImageBase = nativeStructure.ImageBase;
+                SectionAlignment = nativeStructure.SectionAlignment;
+                FileAlignment = nativeStructure.FileAlignment;
+                MajorOperatingSystemVersion = nativeStructure.MajorOperatingSystemVersion;
+                MinorOperatingSystemVersion = nativeStructure.MinorOperatingSystemVersion;
+                MajorImageVersion = nativeStructure.MajorImageVersion;
+                MinorImageVersion = nativeStructure.MinorImageVersion;
+                MajorSubsystemVersion = nativeStructure.MajorSubsystemVersion;
+                MinorSubsystemVersion = nativeStructure.MinorSubsystemVersion;
+                Win32VersionValue = nativeStructure.Win32VersionValue;
+                SizeOfImage = nativeStructure.SizeOfImage;
+                SizeOfHeaders = nativeStructure.SizeOfHeaders;
+                CheckSum = nativeStructure.CheckSum;
+                Subsystem = (ImageOptionalSubsytem)nativeStructure.Subsystem;
+                DllCharacteristics = (ImageOptionalDllCharacteristics)nativeStructure.DllCharacteristics;
+                SizeOfStackReserve = nativeStructure.SizeOfStackReserve;
+                SizeOfStackCommit = nativeStructure.SizeOfStackCommit;
+                SizeOfHeapReserve = nativeStructure.SizeOfHeapReserve;
+                SizeOfHeapCommit = nativeStructure.SizeOfHeapCommit;
+                LoaderFlags = nativeStructure.LoaderFlags;
+                NumberOfRvaAndSizes = nativeStructure.NumberOfRvaAndSizes;
+                #endregion
+
+                #region Assign data directories
+                ExportTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ExportTable);
+                ImportTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ImportTable);
+                ResourceTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ResourceTable);
+                ExceptionTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ExceptionTable);
+                CertificateTable = new IMAGE_DATA_DIRECTORY(nativeStructure.CertificateTable);
+                BaseRelocationTable = new IMAGE_DATA_DIRECTORY(nativeStructure.BaseRelocationTable);
+                Debug = new IMAGE_DATA_DIRECTORY(nativeStructure.Debug);
+                Architecture = new IMAGE_DATA_DIRECTORY(nativeStructure.Architecture);
+                GlobalPtr = new IMAGE_DATA_DIRECTORY(nativeStructure.GlobalPtr);
+                TLSTable = new IMAGE_DATA_DIRECTORY(nativeStructure.TLSTable);
+                LoadConfigTable = new IMAGE_DATA_DIRECTORY(nativeStructure.LoadConfigTable);
+                BoundImport = new IMAGE_DATA_DIRECTORY(nativeStructure.BoundImport);
+                IAT = new IMAGE_DATA_DIRECTORY(nativeStructure.IAT);
+                DelayImportDescriptor = new IMAGE_DATA_DIRECTORY(nativeStructure.DelayImportDescriptor);
+                CLRRuntimeHeader = new IMAGE_DATA_DIRECTORY(nativeStructure.CLRRuntimeHeader);
+                Reserved = new IMAGE_DATA_DIRECTORY(nativeStructure.Reserved);
+                #endregion
+            }
         }
 
         public class IMAGE_NT_HEADERS
@@ -531,7 +614,97 @@ namespace PDBFetch
                     throw new PeParsingException("bad PE signature");
                 }
 
+                FileHeader = new IMAGE_FILE_HEADER(reader);
+                switch (FileHeader.Machine)
+                {
+                    case ImageFileMachine.IMAGE_FILE_MACHINE_AMD64:
+                        OptionalHeader = new IMAGE_OPTIONAL_HEADER64(reader);
+                        break;
 
+                    case ImageFileMachine.IMAGE_FILE_MACHINE_I386:
+                        OptionalHeader = new IMAGE_OPTIONAL_HEADER32(reader);
+                        break;
+
+                    default:
+                        throw new PeParsingException("machine type not supported");
+                }
+            }
+        }
+
+        [Flags]
+        public enum ImageSectionCharacteristics : uint
+        {
+            Reserved0 = 0x0,
+            Reserved1 = 0x1,
+            Reserved2 = 0x2,
+            Reserved3 = 0x4,
+            IMAGE_SCN_TYPE_NO_PAD = 0x8,
+            Reserved4 = 0x10,
+            IMAGE_SCN_CNT_CODE = 0x20,
+            IMAGE_SCN_CNT_INITIALIZED_DATA = 0x40,
+            IMAGE_SCN_CNT_UNINITIALIZED_DATA = 0x80,
+            IMAGE_SCN_LNK_OTHER = 0x100,
+            IMAGE_SCN_LNK_INFO = 0x200,
+            Reserved5 = 0x400,
+            IMAGE_SCN_LNK_REMOVE = 0x800,
+            IMAGE_SCN_LNK_COMDAT = 0x1000
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        internal struct NATIVE_IMAGE_SECTION_HEADER
+        {
+            [FieldOffset(0)]
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public char[] Name;
+
+            [FieldOffset(8)]
+            public UInt32 VirtualSize;
+
+            [FieldOffset(12)]
+            public UInt32 VirtualAddress;
+
+            [FieldOffset(16)]
+            public UInt32 SizeOfRawData;
+
+            [FieldOffset(20)]
+            public UInt32 PointerToRawData;
+
+            [FieldOffset(24)]
+            public UInt32 PointerToRelocations;
+
+            [FieldOffset(28)]
+            public UInt32 PointerToLineNumbers;
+
+            [FieldOffset(32)]
+            public UInt16 NumberOfRelocations;
+
+            [FieldOffset(34)]
+            public UInt16 NumberOfLineNumbers;
+
+            [FieldOffset(36)]
+            public UInt32 Characteristics;
+
+            //public string Section
+            //{
+            //    get { return new string(Name); }
+            //}
+        }
+
+        public class IMAGE_SECTION_HEADER
+        {
+            public char[] Name { get; }
+            public uint VirtualSize { get; }
+            public uint VirtualAddress { get; }
+            public uint SizeOfRawData { get; }
+            public uint PointerToRawData { get; }
+            public uint PointerToRelocation { get; }
+            public uint PointerToLineNumbers { get; }
+            public ushort NumberOfRelocations { get; }
+            public ushort NumberOfLineNumbers { get; }
+            public ImageSectionCharacteristics Characteristics { get; }
+
+            public IMAGE_SECTION_HEADER(BinaryReader reader)
+            {
             }
         }
 
@@ -564,7 +737,7 @@ namespace PDBFetch
             }
             catch(PeParsingException)
             {
-                // re throw
+                // rethrow
                 throw;
             }
             catch // other exceptions
