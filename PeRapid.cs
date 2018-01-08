@@ -142,6 +142,28 @@ namespace PDBFetch
 
         public enum ImageFileMachine : ushort
         {
+            IMAGE_FILE_MACHINE_UNKNOWN = 0x0,
+            IMAGE_FILE_MACHINE_AM33 = 0x1d3,
+            IMAGE_FILE_MACHINE_ARM = 0x1c0,
+            IMAGE_FILE_MACHINE_ARM64 = 0xaa64,
+            IMAGE_FILE_MACHINE_ARMNT = 0x1c4,
+            IMAGE_FILE_MACHINE_EBC = 0xebc,
+            IMAGE_FILE_MACHINE_M32R = 0x9041,
+            IMAGE_FILE_MACHINE_MIPS16 = 0x266,
+            IMAGE_FILE_MACHINE_MIPSFPU = 0x366,
+            IMAGE_FILE_MACHINE_MIPSFPU16 = 0x466,
+            IMAGE_FILE_MACHINE_POWERPC = 0x1f0,
+            IMAGE_FILE_MACHINE_POWERPCFP = 0x1f1,
+            IMAGE_FILE_MACHINE_R4000 = 0x166,
+            IMAGE_FILE_MACHINE_RISCV32 = 0x5032,
+            IMAGE_FILE_MACHINE_RISCV64 = 0x5064,
+            IMAGE_FILE_MACHINE_RISCV128 = 0x5128,
+            IMAGE_FILE_MACHINE_SH3 = 0x1a2,
+            IMAGE_FILE_MACHINE_SH3DSP = 0x1a3,
+            IMAGE_FILE_MACHINE_SH4 = 0x1a6,
+            IMAGE_FILE_MACHINE_SH5 = 0x1a8,
+            IMAGE_FILE_MACHINE_THUMB = 0x1c2,
+            IMAGE_FILE_MACHINE_WCEMIPSV2 = 0x169,
             IMAGE_FILE_MACHINE_I386 = 0x14c,
             IMAGE_FILE_MACHINE_IA64 = 0x200,
             IMAGE_FILE_MACHINE_AMD64 = 0x8664
@@ -199,8 +221,9 @@ namespace PDBFetch
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        private struct NATIVE_IMAGE_OPTIONAL_HEADER32
+        internal struct NATIVE_IMAGE_OPTIONAL_HEADER32
         {
+            #region Separated properties
             public UInt16 Magic;
             public Byte MajorLinkerVersion;
             public Byte MinorLinkerVersion;
@@ -231,7 +254,9 @@ namespace PDBFetch
             public UInt32 SizeOfHeapCommit;
             public UInt32 LoaderFlags;
             public UInt32 NumberOfRvaAndSizes;
+            #endregion
 
+            #region Data directories
             public NATIVE_IMAGE_DATA_DIRECTORY ExportTable;
             public NATIVE_IMAGE_DATA_DIRECTORY ImportTable;
             public NATIVE_IMAGE_DATA_DIRECTORY ResourceTable;
@@ -248,6 +273,7 @@ namespace PDBFetch
             public NATIVE_IMAGE_DATA_DIRECTORY DelayImportDescriptor;
             public NATIVE_IMAGE_DATA_DIRECTORY CLRRuntimeHeader;
             public NATIVE_IMAGE_DATA_DIRECTORY Reserved;
+            #endregion
         }
 
         public class IMAGE_DATA_DIRECTORY
@@ -280,6 +306,7 @@ namespace PDBFetch
             IMAGE_SUBSYSTEM_WINDOWS_CUI = 3,
             IMAGE_SUBSYSTEM_OS2_CUI = 5,
             IMAGE_SUBSYSTEM_POSIX_CUI = 7,
+            IMAGE_SUBSYSTEM_NATIVE_WINDOWS = 8,
             IMAGE_SUBSYSTEM_WINDOWS_CE_GUI = 9,
             IMAGE_SUBSYSTEM_EFI_APPLICATION = 10,
             IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER = 11,
@@ -296,14 +323,16 @@ namespace PDBFetch
             Reserved1 = 0x2,
             Reserved2 = 0x4,
             Reserved3 = 0x8,
+            IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA = 0x20,
             IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE = 0x40,
             IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY = 0x80,
             IMAGE_DLLCHARACTERISTICS_NX_COMPAT = 0x100,
             IMAGE_DLLCHARACTERISTICS_NO_ISOLATION = 0x200,
             IMAGE_DLLCHARACTERISTICS_NO_SEH = 0x400,
             IMAGE_DLLCHARACTERISTICS_NO_BIND = 0x800,
+            IMAGE_DLLCHARACTERISTICS_APPCONTAINER = 0x1000,
             IMAGE_DLLCHARACTERISTICS_WDM_DRIVER = 0x2000,
-            Reserved4 = 0x4000,
+            IMAGE_DLLCHARACTERISTICS_GUARD_CF = 0x4000,
             IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE = 0x8000
         }
 
@@ -603,8 +632,7 @@ namespace PDBFetch
         {
             public uint Signature { get; }
             public IMAGE_FILE_HEADER FileHeader { get; }
-            // either IMAGE_OPTIONAL_HEADER32 or IMAGE_OPTIONAL_HEADER64
-            public dynamic OptionalHeader { get; }
+            public dynamic OptionalHeader { get; } // either IMAGE_OPTIONAL_HEADER32 or IMAGE_OPTIONAL_HEADER64
 
             public IMAGE_NT_HEADERS(BinaryReader reader)
             {
@@ -615,6 +643,7 @@ namespace PDBFetch
                 }
 
                 FileHeader = new IMAGE_FILE_HEADER(reader);
+
                 switch (FileHeader.Machine)
                 {
                     case ImageFileMachine.IMAGE_FILE_MACHINE_AMD64:
@@ -626,7 +655,7 @@ namespace PDBFetch
                         break;
 
                     default:
-                        throw new PeParsingException("machine type not supported");
+                        throw new PeParsingException("unsupported machine type");
                 }
             }
         }
@@ -647,7 +676,34 @@ namespace PDBFetch
             IMAGE_SCN_LNK_INFO = 0x200,
             Reserved5 = 0x400,
             IMAGE_SCN_LNK_REMOVE = 0x800,
-            IMAGE_SCN_LNK_COMDAT = 0x1000
+            IMAGE_SCN_LNK_COMDAT = 0x1000,
+            IMAGE_SCN_GPREL = 0x00008000,
+            IMAGE_SCN_MEM_PURGEABLE = 0x00020000,
+            IMAGE_SCN_MEM_16BIT = 0x00020000,
+            IMAGE_SCN_MEM_LOCKED = 0x00020000,
+            IMAGE_SCN_MEM_PRELOAD = 0x00020000,
+            IMAGE_SCN_ALIGN_1BYTES = 0x00100000,
+            IMAGE_SCN_ALIGN_2BYTES = 0x00200000,
+            IMAGE_SCN_ALIGN_4BYTES = 0x00300000,
+            IMAGE_SCN_ALIGN_8BYTES = 0x00400000,
+            IMAGE_SCN_ALIGN_16BYTES = 0x00500000,
+            IMAGE_SCN_ALIGN_32BYTES = 0x00600000,
+            IMAGE_SCN_ALIGN_64BYTES = 0x00700000,
+            IMAGE_SCN_ALIGN_128BYTES = 0x00800000,
+            IMAGE_SCN_ALIGN_256BYTES = 0x00900000,
+            IMAGE_SCN_ALIGN_512BYTES = 0x00a00000,
+            IMAGE_SCN_ALIGN_1024BYTES = 0x00b00000,
+            IMAGE_SCN_ALIGN_2048BYTES = 0x00c00000,
+            IMAGE_SCN_ALIGN_4096BYTES = 0x00d00000,
+            IMAGE_SCN_ALIGN_8192BYTES = 0x00e00000,
+            IMAGE_SCN_LNK_NRELOC_OVFL = 0x01000000,
+            IMAGE_SCN_MEM_DISCARDABLE = 0x02000000,
+            IMAGE_SCN_MEM_NOT_CACHED = 0x04000000,
+            IMAGE_SCN_MEM_NOT_PAGED = 0x08000000,
+            IMAGE_SCN_MEM_SHARED = 0x10000000,
+            IMAGE_SCN_MEM_EXECUTE = 0x20000000,
+            IMAGE_SCN_MEM_READ = 0x40000000,
+            IMAGE_SCN_MEM_WRITE = 0x80000000
         }
 
         [StructLayout(LayoutKind.Explicit)]
@@ -697,7 +753,7 @@ namespace PDBFetch
             public uint VirtualAddress { get; }
             public uint SizeOfRawData { get; }
             public uint PointerToRawData { get; }
-            public uint PointerToRelocation { get; }
+            public uint PointerToRelocations { get; }
             public uint PointerToLineNumbers { get; }
             public ushort NumberOfRelocations { get; }
             public ushort NumberOfLineNumbers { get; }
@@ -705,8 +761,20 @@ namespace PDBFetch
 
             public IMAGE_SECTION_HEADER(BinaryReader reader)
             {
+                var nativeStructure = ExtractNativeStructure<NATIVE_IMAGE_SECTION_HEADER>(reader);
+
+                Name = nativeStructure.Name;
+                VirtualSize = nativeStructure.VirtualSize;
+                VirtualAddress = nativeStructure.VirtualAddress;
+                SizeOfRawData = nativeStructure.SizeOfRawData;
+                PointerToRawData = nativeStructure.PointerToRawData;
+                PointerToRelocations = nativeStructure.PointerToRelocations;
+                PointerToLineNumbers = nativeStructure.PointerToLineNumbers;
+                NumberOfRelocations = nativeStructure.NumberOfRelocations;
+                Characteristics = (ImageSectionCharacteristics)nativeStructure.Characteristics;
             }
         }
+        public IMAGE_SECTION_HEADER ImageSectionHeader { get; }
 
         #region constructor
         PeRapid(string filePath)
@@ -731,6 +799,7 @@ namespace PDBFetch
                 throw new PeParsingException("file cannot read");
             }
 
+            // read IMAGE_DOS_HEADER
             try
             {
                 ImageDosHeader = new IMAGE_DOS_HEADER(reader);
@@ -744,9 +813,17 @@ namespace PDBFetch
             {
                 throw new PeParsingException("bad dos header");
             }
-            
-            
 
+            // read IMAGE_NT_HEADERS
+            try
+            {
+                stream.Seek(ImageDosHeader.e_lfanew, SeekOrigin.Begin);
+            }
+            catch
+            {
+                throw new PeParsingException("cannot seek to IMAGE_NT_HEADERS offset");
+            }
+            ImageSectionHeader = new IMAGE_SECTION_HEADER(reader);
         }
         #endregion constructor
     }
