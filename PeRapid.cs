@@ -499,22 +499,22 @@ namespace PDBFetch
             #endregion
 
             #region Image data directories
-            public IMAGE_DATA_DIRECTORY ExportTable;
-            public IMAGE_DATA_DIRECTORY ImportTable;
-            public IMAGE_DATA_DIRECTORY ResourceTable;
-            public IMAGE_DATA_DIRECTORY ExceptionTable;
-            public IMAGE_DATA_DIRECTORY CertificateTable;
-            public IMAGE_DATA_DIRECTORY BaseRelocationTable;
-            public IMAGE_DATA_DIRECTORY Debug;
-            public IMAGE_DATA_DIRECTORY Architecture;
-            public IMAGE_DATA_DIRECTORY GlobalPtr;
-            public IMAGE_DATA_DIRECTORY TLSTable;
-            public IMAGE_DATA_DIRECTORY LoadConfigTable;
-            public IMAGE_DATA_DIRECTORY BoundImport;
-            public IMAGE_DATA_DIRECTORY IAT;
-            public IMAGE_DATA_DIRECTORY DelayImportDescriptor;
-            public IMAGE_DATA_DIRECTORY CLRRuntimeHeader;
-            public IMAGE_DATA_DIRECTORY Reserved;
+            public NATIVE_IMAGE_DATA_DIRECTORY ExportTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY ImportTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY ResourceTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY ExceptionTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY CertificateTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY BaseRelocationTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY Debug;
+            public NATIVE_IMAGE_DATA_DIRECTORY Architecture;
+            public NATIVE_IMAGE_DATA_DIRECTORY GlobalPtr;
+            public NATIVE_IMAGE_DATA_DIRECTORY TLSTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY LoadConfigTable;
+            public NATIVE_IMAGE_DATA_DIRECTORY BoundImport;
+            public NATIVE_IMAGE_DATA_DIRECTORY IAT;
+            public NATIVE_IMAGE_DATA_DIRECTORY DelayImportDescriptor;
+            public NATIVE_IMAGE_DATA_DIRECTORY CLRRuntimeHeader;
+            public NATIVE_IMAGE_DATA_DIRECTORY Reserved;
             #endregion
         }
 
@@ -573,7 +573,16 @@ namespace PDBFetch
 
             public IMAGE_OPTIONAL_HEADER64(BinaryReader reader)
             {
-                var nativeStructure = ExtractNativeStructure<NATIVE_IMAGE_OPTIONAL_HEADER32>(reader);
+                NATIVE_IMAGE_OPTIONAL_HEADER64 nativeStructure;
+                try
+                {
+                    nativeStructure = ExtractNativeStructure<NATIVE_IMAGE_OPTIONAL_HEADER64>(reader);
+                }
+                catch
+                {
+                    throw new PeParsingException("cannot extract IMAGE_OPTIONAL_HEADER32");
+                }
+                
 
                 #region Assign separated properties
                 Magic = (ImageOptionalMagic)nativeStructure.Magic;
@@ -659,6 +668,7 @@ namespace PDBFetch
                 }
             }
         }
+        public IMAGE_NT_HEADERS ImageNtHeaders { get; }
 
         [Flags]
         public enum ImageSectionCharacteristics : uint
@@ -774,7 +784,47 @@ namespace PDBFetch
                 Characteristics = (ImageSectionCharacteristics)nativeStructure.Characteristics;
             }
         }
-        public IMAGE_SECTION_HEADER ImageSectionHeader { get; }
+        public IMAGE_SECTION_HEADER[] ImageSectionHeaders { get; }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        internal struct NATIVE_IMAGE_DEBUG_DIRECTORY
+        {
+            public UInt32 Characteristics;
+            public UInt32 TimeDateStamp;
+            public UInt16 MajorVersion;
+            public UInt16 MinorVersion;
+            public UInt32 Type;
+            public UInt32 SizeOfData;
+            public UInt32 AddressOfRawData;
+            public UInt32 PointerToRawData;
+        }
+
+        public class IMAGE_DEBUG_DIRECTORY
+        {
+            public uint Characteristics;
+            public uint TimeDateStamp;
+            public ushort MajorVersion;
+            public ushort MinorVersion;
+            public uint Type;
+            public uint SizeOfData;
+            public uint AddressOfRawData;
+            public uint PointerToRawData;
+
+            public IMAGE_DEBUG_DIRECTORY(BinaryReader reader)
+            {
+                var nativeStructure = ExtractNativeStructure<NATIVE_IMAGE_DEBUG_DIRECTORY>(reader);
+
+                Characteristics = nativeStructure.Characteristics;
+                TimeDateStamp = nativeStructure.TimeDateStamp;
+                MajorVersion = nativeStructure.MajorVersion;
+                MinorVersion = nativeStructure.MinorVersion;
+                Type = nativeStructure.Type;
+                SizeOfData = nativeStructure.SizeOfData;
+                AddressOfRawData = nativeStructure.AddressOfRawData;
+                PointerToRawData = nativeStructure.PointerToRawData;
+            }
+        }
+        public IMAGE_DEBUG_DIRECTORY[] ImageDebugDirectories { get; }
 
         #region constructor
         PeRapid(string filePath)
@@ -786,7 +836,7 @@ namespace PDBFetch
             }
             catch
             {
-                throw new PeParsingException("file cannot accessed");
+                throw new PeParsingException("cannot open file stream");
             }
 
             BinaryReader reader;
@@ -796,7 +846,7 @@ namespace PDBFetch
             }
             catch
             {
-                throw new PeParsingException("file cannot read");
+                throw new PeParsingException("cannot read file stream");
             }
 
             // read IMAGE_DOS_HEADER
@@ -811,7 +861,7 @@ namespace PDBFetch
             }
             catch // other exceptions
             {
-                throw new PeParsingException("bad dos header");
+                throw new PeParsingException("error reading DOS header");
             }
 
             // read IMAGE_NT_HEADERS
@@ -821,9 +871,34 @@ namespace PDBFetch
             }
             catch
             {
-                throw new PeParsingException("cannot seek to IMAGE_NT_HEADERS offset");
+                throw new PeParsingException("cannot seek to NT header offset");
             }
-            ImageSectionHeader = new IMAGE_SECTION_HEADER(reader);
+            ImageNtHeaders = new IMAGE_NT_HEADERS(reader);
+
+            // read IMAGE_SECTION_HEADER(s)
+            ImageSectionHeaders = new IMAGE_SECTION_HEADER[ImageNtHeaders.FileHeader.NumberOfSections];
+            for (var i = 0; i < ImageSectionHeaders.Length; ++i)
+            {
+                ImageSectionHeaders[i] = new IMAGE_SECTION_HEADER(reader);
+            }
+
+            // read IMAGE_DEBUG_DIRECTORY(s)
+            uint debugDataDirSize;
+            if (ImageFileMachine.IMAGE_FILE_MACHINE_AMD64 == ImageNtHeaders.FileHeader.Machine)
+            {
+                debugDataDirSize = ((IMAGE_OPTIONAL_HEADER32)ImageNtHeaders.OptionalHeader).Debug.Size;
+            }
+            else
+            {
+                debugDataDirSize = ((IMAGE_OPTIONAL_HEADER64)ImageNtHeaders.OptionalHeader).Debug.Size;
+            }
+            var numberOfDebugDirectory = debugDataDirSize / Marshal.SizeOf(typeof(NATIVE_IMAGE_DEBUG_DIRECTORY));
+            ImageDebugDirectories = new IMAGE_DEBUG_DIRECTORY[numberOfDebugDirectory];
+            if (numberOfDebugDirectory > 0)
+            {
+
+            }
+
         }
         #endregion constructor
     }
