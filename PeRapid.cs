@@ -379,7 +379,7 @@ namespace PDBFetch
             public IMAGE_DATA_DIRECTORY ExceptionTable { get; }
             public IMAGE_DATA_DIRECTORY CertificateTable { get; }
             public IMAGE_DATA_DIRECTORY BaseRelocationTable { get; }
-            public IMAGE_DATA_DIRECTORY Debug { get; }
+            public IMAGE_DATA_DIRECTORY DebugDirectory { get; }
             public IMAGE_DATA_DIRECTORY Architecture { get; }
             public IMAGE_DATA_DIRECTORY GlobalPtr { get; }
             public IMAGE_DATA_DIRECTORY TLSTable { get; }
@@ -433,7 +433,7 @@ namespace PDBFetch
                 ExceptionTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ExceptionTable);
                 CertificateTable = new IMAGE_DATA_DIRECTORY(nativeStructure.CertificateTable);
                 BaseRelocationTable = new IMAGE_DATA_DIRECTORY(nativeStructure.BaseRelocationTable);
-                Debug = new IMAGE_DATA_DIRECTORY(nativeStructure.Debug);
+                DebugDirectory = new IMAGE_DATA_DIRECTORY(nativeStructure.Debug);
                 Architecture = new IMAGE_DATA_DIRECTORY(nativeStructure.Architecture);
                 GlobalPtr = new IMAGE_DATA_DIRECTORY(nativeStructure.GlobalPtr);
                 TLSTable = new IMAGE_DATA_DIRECTORY(nativeStructure.TLSTable);
@@ -559,7 +559,7 @@ namespace PDBFetch
             public IMAGE_DATA_DIRECTORY ExceptionTable { get; }
             public IMAGE_DATA_DIRECTORY CertificateTable { get; }
             public IMAGE_DATA_DIRECTORY BaseRelocationTable { get; }
-            public IMAGE_DATA_DIRECTORY Debug { get; }
+            public IMAGE_DATA_DIRECTORY DebugDirectory { get; }
             public IMAGE_DATA_DIRECTORY Architecture { get; }
             public IMAGE_DATA_DIRECTORY GlobalPtr { get; }
             public IMAGE_DATA_DIRECTORY TLSTable { get; }
@@ -623,7 +623,7 @@ namespace PDBFetch
                 ExceptionTable = new IMAGE_DATA_DIRECTORY(nativeStructure.ExceptionTable);
                 CertificateTable = new IMAGE_DATA_DIRECTORY(nativeStructure.CertificateTable);
                 BaseRelocationTable = new IMAGE_DATA_DIRECTORY(nativeStructure.BaseRelocationTable);
-                Debug = new IMAGE_DATA_DIRECTORY(nativeStructure.Debug);
+                DebugDirectory = new IMAGE_DATA_DIRECTORY(nativeStructure.Debug);
                 Architecture = new IMAGE_DATA_DIRECTORY(nativeStructure.Architecture);
                 GlobalPtr = new IMAGE_DATA_DIRECTORY(nativeStructure.GlobalPtr);
                 TLSTable = new IMAGE_DATA_DIRECTORY(nativeStructure.TLSTable);
@@ -799,13 +799,29 @@ namespace PDBFetch
             public UInt32 PointerToRawData;
         }
 
+        public enum ImageDebugType : uint
+        {
+            IMAGE_DEBUG_TYPE_UNKNOWN = 0,
+            IMAGE_DEBUG_TYPE_COFF = 1,
+            IMAGE_DEBUG_TYPE_CODEVIEW = 2,
+            IMAGE_DEBUG_TYPE_FPO = 3,
+            IMAGE_DEBUG_TYPE_MISC = 4,
+            IMAGE_DEBUG_TYPE_EXCEPTION = 5,
+            IMAGE_DEBUG_TYPE_FIXUP = 6,
+            IMAGE_DEBUG_TYPE_OMAP_TO_SRC = 7,
+            IMAGE_DEBUG_TYPE_OMAP_FROM_SRC = 8,
+            IMAGE_DEBUG_TYPE_BORLAND = 9,
+            IMAGE_DEBUG_TYPE_RESERVED10 = 10,
+            IMAGE_DEBUG_TYPE_CLSID = 11
+        }
+
         public class IMAGE_DEBUG_DIRECTORY
         {
             public uint Characteristics;
             public uint TimeDateStamp;
             public ushort MajorVersion;
             public ushort MinorVersion;
-            public uint Type;
+            public ImageDebugType Type;
             public uint SizeOfData;
             public uint AddressOfRawData;
             public uint PointerToRawData;
@@ -818,7 +834,7 @@ namespace PDBFetch
                 TimeDateStamp = nativeStructure.TimeDateStamp;
                 MajorVersion = nativeStructure.MajorVersion;
                 MinorVersion = nativeStructure.MinorVersion;
-                Type = nativeStructure.Type;
+                Type = (ImageDebugType)nativeStructure.Type;
                 SizeOfData = nativeStructure.SizeOfData;
                 AddressOfRawData = nativeStructure.AddressOfRawData;
                 PointerToRawData = nativeStructure.PointerToRawData;
@@ -826,23 +842,26 @@ namespace PDBFetch
         }
         public IMAGE_DEBUG_DIRECTORY[] ImageDebugDirectories { get; }
 
+        private FileStream fileStream;
+        private BinaryReader fileReader;
+
         #region constructor
         PeRapid(string filePath)
         {
-            FileStream stream;
+            //FileStream stream;
             try
             {
-                stream = new FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                fileStream = new FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
             }
             catch
             {
                 throw new PeParsingException("cannot open file stream");
             }
 
-            BinaryReader reader;
+            //BinaryReader reader;
             try
             {
-                reader = new BinaryReader(stream);
+                fileReader = new BinaryReader(fileStream);
             }
             catch
             {
@@ -852,7 +871,7 @@ namespace PDBFetch
             // read IMAGE_DOS_HEADER
             try
             {
-                ImageDosHeader = new IMAGE_DOS_HEADER(reader);
+                ImageDosHeader = new IMAGE_DOS_HEADER(fileReader);
             }
             catch(PeParsingException)
             {
@@ -867,39 +886,107 @@ namespace PDBFetch
             // read IMAGE_NT_HEADERS
             try
             {
-                stream.Seek(ImageDosHeader.e_lfanew, SeekOrigin.Begin);
+                fileStream.Seek(ImageDosHeader.e_lfanew, SeekOrigin.Begin);
             }
             catch
             {
                 throw new PeParsingException("cannot seek to NT header offset");
             }
-            ImageNtHeaders = new IMAGE_NT_HEADERS(reader);
+            ImageNtHeaders = new IMAGE_NT_HEADERS(fileReader);
 
             // read IMAGE_SECTION_HEADER(s)
             ImageSectionHeaders = new IMAGE_SECTION_HEADER[ImageNtHeaders.FileHeader.NumberOfSections];
             for (var i = 0; i < ImageSectionHeaders.Length; ++i)
             {
-                ImageSectionHeaders[i] = new IMAGE_SECTION_HEADER(reader);
+                ImageSectionHeaders[i] = new IMAGE_SECTION_HEADER(fileReader);
             }
 
             // read IMAGE_DEBUG_DIRECTORY(s)
             uint debugDataDirSize;
+            uint debugDataDirRVA;
             if (ImageFileMachine.IMAGE_FILE_MACHINE_AMD64 == ImageNtHeaders.FileHeader.Machine)
             {
-                debugDataDirSize = ((IMAGE_OPTIONAL_HEADER32)ImageNtHeaders.OptionalHeader).Debug.Size;
+                debugDataDirSize = ((IMAGE_OPTIONAL_HEADER32)ImageNtHeaders.OptionalHeader).DebugDirectory.Size;
+                debugDataDirRVA = ((IMAGE_OPTIONAL_HEADER32)ImageNtHeaders.OptionalHeader).DebugDirectory.VirtualAddress;
             }
             else
             {
-                debugDataDirSize = ((IMAGE_OPTIONAL_HEADER64)ImageNtHeaders.OptionalHeader).Debug.Size;
+                debugDataDirSize = ((IMAGE_OPTIONAL_HEADER64)ImageNtHeaders.OptionalHeader).DebugDirectory.Size;
+                debugDataDirRVA = ((IMAGE_OPTIONAL_HEADER64)ImageNtHeaders.OptionalHeader).DebugDirectory.VirtualAddress;
             }
             var numberOfDebugDirectory = debugDataDirSize / Marshal.SizeOf(typeof(NATIVE_IMAGE_DEBUG_DIRECTORY));
             ImageDebugDirectories = new IMAGE_DEBUG_DIRECTORY[numberOfDebugDirectory];
             if (numberOfDebugDirectory > 0)
             {
+                // looking for the location of IMAGE_DEBUG_DIRECTORY
+                bool debugDirsLocationFound = false;
+                foreach (var sectionHeader in ImageSectionHeaders)
+                {
+                    if (sectionHeader.VirtualAddress <= debugDataDirRVA && 
+                        debugDataDirRVA < sectionHeader.VirtualAddress + sectionHeader.VirtualSize)
+                    {
+                        // ok, found
+                        debugDirsLocationFound = true;
+                        fileStream.Seek(sectionHeader.PointerToRawData, SeekOrigin.Begin);
+                        for (var i = 0; i < ImageDebugDirectories.Length; ++i)
+                        {
+                            ImageDebugDirectories[i] = new IMAGE_DEBUG_DIRECTORY(fileReader);
+                        }
+                    }
+                }
 
+                if (!debugDirsLocationFound)
+                {
+                    ImageDebugDirectories = new IMAGE_DEBUG_DIRECTORY[0];
+                }
             }
-
         }
         #endregion constructor
+
+        public bool HasPdb(out IMAGE_DEBUG_DIRECTORY pdbDebugDir)
+        {
+            if (ImageDebugDirectories.Length == 0)
+            {
+                pdbDebugDir = null;
+                return false;
+            }
+
+            foreach (var debugDir in ImageDebugDirectories)
+            {
+                if (debugDir.Type == ImageDebugType.IMAGE_DEBUG_TYPE_CODEVIEW)
+                {
+                    fileStream.Seek(debugDir.PointerToRawData, SeekOrigin.Begin);
+                    var cvSignature = fileReader.ReadBytes(4);
+                    byte[] pdb70_cv_signature = { (byte)'R', (byte)'S', (byte)'D', (byte)'S' };
+                    if (cvSignature.SequenceEqual(pdb70_cv_signature)) 
+                    {
+                        pdbDebugDir = debugDir;
+                        return true;
+                    }
+                }
+            }
+
+            pdbDebugDir = null;
+            return false;
+        }
+
+        public void GetPdbInformation(IMAGE_DEBUG_DIRECTORY pdbDebugDir, out byte[] guid, out uint age, out string fileName)
+        {
+            if (null == pdbDebugDir)
+            {
+                throw new PeParsingException("debug directory is null");
+            }
+
+            fileStream.Seek(pdbDebugDir.PointerToRawData, SeekOrigin.Begin + 4);
+            guid = fileReader.ReadBytes(16);
+            age = fileReader.ReadUInt32();
+            var extractedPdbFileName = fileReader.ReadString();
+            var pdbFileName = extractedPdbFileName.Split('\\').Last();
+            if (string.IsNullOrEmpty(pdbFileName))
+            {
+                throw new PeParsingException("PDB file name not found");
+            }
+            fileName = pdbFileName;
+        }
     }
 }
